@@ -1,8 +1,6 @@
 # l1-l2-bridge-tutorial
 
-Token bridge tutorial between L1 and L2.
-
-Anyone can try oFT and oNFT bridging between the OasysTestnet and SandVerse.
+Anyone can try to token bridge between Oasys Testnet and SandVerse.
 
 ## Quick Start
 
@@ -21,6 +19,12 @@ Set the private key of the your test account in the `.env` file.
 
 ```shell
 PRIVATE_KEY=0x...
+```
+
+Try `OAS` bridge.
+
+```shell
+npx hardhat run scripts/bridge-OAS.ts
 ```
 
 Try `oFT` bridge.
