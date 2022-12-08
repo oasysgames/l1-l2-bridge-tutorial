@@ -132,7 +132,10 @@ const main = async () => {
   log(`[Hub-Layer] Mint oNFT (id: ${oNFT_TOKEN_ID})...`)
 
   switchNetwork('l1')
-  const tx3 = await l1onft.mint(signer.address, oNFT_TOKEN_ID)
+  const tx3 = await l1onft['mint(address,uint256)'](
+    signer.address,
+    oNFT_TOKEN_ID,
+  )
   const receipt3 = await tx3.wait()
 
   let [l1Owner, l2Owner] = await getOwners()

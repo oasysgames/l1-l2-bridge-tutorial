@@ -132,7 +132,7 @@ const main = async () => {
   log('[Hub-Layer] Mint oFT...')
 
   switchNetwork('l1')
-  const tx3 = await l1oft.mint(signer.address, oFT_AMOUNT)
+  const tx3 = await l1oft['mint(address,uint256)'](signer.address, oFT_AMOUNT)
   const receipt3 = await tx3.wait()
 
   let [l1Balance, l2Balance] = await getBalance()
