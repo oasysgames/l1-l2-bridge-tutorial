@@ -25,7 +25,7 @@ const addresses = {
   },
   l2: {
     // Verse-Layer pre-deployed Contracts. Same address for all Verse-Layers.
-    OVM_ETH: '0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000',
+    OVM_OAS: '0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000',
     L2CrossDomainMessenger: '0x4200000000000000000000000000000000000007',
     L2StandardBridge: '0x4200000000000000000000000000000000000010',
     L2StandardTokenFactory: '0x4200000000000000000000000000000000000012',
