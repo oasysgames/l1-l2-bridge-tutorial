@@ -128,7 +128,7 @@ const main = async () => {
 
   switchNetwork('l2')
   const tx2 = await l2ERC20Bridge.withdraw(
-    addresses.l2.OVM_ETH,
+    addresses.l2.OVM_OAS,
     AMOUNT,
     2_000_000,
     '0x',
