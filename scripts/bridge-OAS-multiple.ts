@@ -203,6 +203,7 @@ const watch_L2_L1 = async (bridgeTx: string) => {
         addresses.l1.Proxy__OVM_L1CrossDomainMessenger,
         l2MsgHash,
       )
+      if (!l1RelayTx) continue
       l1Tx = l1RelayTx
       break
     } catch (error) {

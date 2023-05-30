@@ -164,7 +164,6 @@ const getTransactionReceiptFromMsgHashV2 = async (
   // scan for transaction with specified message
   const blockNumber = await hre.ethers.provider.getBlockNumber()
   const startingBlock = Math.max(blockNumber - BLOCKS_TO_FETCH, 0)
-  console.log('msgHash', msgHash); //ここが時間と共に変わる模様
   const successFilter: Filter = {
     address: messengerAddress,
     topics: [RELAYED_MESSAGE],
