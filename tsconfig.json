@@ -16,6 +16,10 @@
       "node_modules/@types"
     ]
   },
+  "include": [
+    "**/*.ts",
+    "artifacts/**/*.json",
+  ],
   "exclude": [
     "node_modules",
     "dist"
