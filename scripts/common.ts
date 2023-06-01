@@ -22,12 +22,6 @@ const addresses = {
       '0xa04B03350eE9E3fdd1C2f63fAD5e0CabBb476594',
     Proxy__OVM_L1StandardBridge: '0x9245e19eB88de2534E03E764FB2a5f194e6d97AD',
     Proxy__OVM_L1ERC721Bridge: '0x8D736Ad22D106dE9Cf50D0D18D571041a47DD333',
-
-    // Local verse
-    // Proxy__OVM_L1CrossDomainMessenger:
-    //   '0xb6B18AA53111D21F9bc892F04815930030C42EFD',
-    // Proxy__OVM_L1StandardBridge: '0xA16517A9796bAc73eFA7d07269F9818b7978dc2A',
-    // Proxy__OVM_L1ERC721Bridge: '0x1931994b20c8E7BbA4eE7d6032fae4aEE64e929d',
   },
   l2: {
     // Verse-Layer pre-deployed Contracts. Same address for all Verse-Layers.
