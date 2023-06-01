@@ -231,28 +231,9 @@ const watch_L2_L1_Bridges = async (bridgeTxs: string[]) => {
 }
 
 const main = async () => {
-  // await bridge_L1_L2()
-  // await bridge_L2_L1()
-
+  await bridge_L1_L2()
   const bridgeTxs = await bridge_L2_L1()
   await watch_L2_L1_Bridges(bridgeTxs)
 }
 
-
 main()
-
-// todo: set bridgeTxs from result of bridge_L2_L1
-// const bridgeTxs = [
-//   '0xce44df26330f257436cf10c688354a6fb2a0c8eaa71ca4e1a3ab8c5c6e27921c',
-//   '0x5cbef904079cef25ea10a50e555d96277e402c089b7a3aa61929b2043e1b946a',
-//   '0x6dd07be1ee3058e639c3e72b8c240c4198433834332ad33ea72559fb04c9560b',
-//   '0x7fdeab9de2dc370ee2be5d517cfea24cda56197cbf5aed457419cf4582423e8d',
-//   '0xab59878833777465d7c1bb66070026d8fa03c9925cafe9ab47f44b196ac3ea98',
-//   '0x90483456985478424790fad4ef549a180f516e125ad7edad6750c64946bc34b8',
-//   '0x7da22906bf068c33d5ca6a9ac238ec298724f07a4f56f5dbc93b12ca3a344475',
-//   '0x15a3421f0a28a4859e46bb37773836b4a652a11b9f658bbd504fd2c195d91625',
-//   '0x981305fd35bc67c7a1ff7ecf753616baf5c2440a5e1754c8867e1c6ad235e0a5',
-//   '0x4d074c5481ad91bbb7f2dda7edd887cbf5735926832bb2f4c68c8371e777ffde'
-// ];
-// watch_L2_L1_Bridges(bridgeTxs)
-
