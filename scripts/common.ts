@@ -18,10 +18,16 @@ const addresses = {
     L1StandardERC721Factory: '0x5200000000000000000000000000000000000005',
 
     // Sand Verse Contracts. Address is different for each Verse-Layer.
+    // Proxy__OVM_L1CrossDomainMessenger:
+    //   '0xa04B03350eE9E3fdd1C2f63fAD5e0CabBb476594',
+    // Proxy__OVM_L1StandardBridge: '0x9245e19eB88de2534E03E764FB2a5f194e6d97AD',
+    // Proxy__OVM_L1ERC721Bridge: '0x8D736Ad22D106dE9Cf50D0D18D571041a47DD333',
+
+    // Home Verse Contracts. Address is different for each Verse-Layer.
     Proxy__OVM_L1CrossDomainMessenger:
-      '0xa04B03350eE9E3fdd1C2f63fAD5e0CabBb476594',
-    Proxy__OVM_L1StandardBridge: '0x9245e19eB88de2534E03E764FB2a5f194e6d97AD',
-    Proxy__OVM_L1ERC721Bridge: '0x8D736Ad22D106dE9Cf50D0D18D571041a47DD333',
+      '0x730C6E2B19d55e59AdB51C50E0444ddea73d3C4e',
+    Proxy__OVM_L1StandardBridge: '0xb4Ca1bf8f3eF20445d6105dC9085A83300c8B5C7',
+    Proxy__OVM_L1ERC721Bridge: '0xBf490B5e2d510D9B7d0A236B9e1a5728CA363eD8',
   },
   l2: {
     // Verse-Layer pre-deployed Contracts. Same address for all Verse-Layers.
