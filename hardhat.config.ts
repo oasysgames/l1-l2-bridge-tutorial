@@ -29,8 +29,8 @@ const config: HardhatUserConfig = {
       accounts: [process.env.PRIVATE_KEY],
     },
     l2: {
-      url: 'https://rpc.sandverse.oasys.games/',
-      chainId: 20197,
+      url: 'https://rpc.testnet.oasys.homeverse.games/',
+      chainId: 40875,
       accounts: [process.env.PRIVATE_KEY],
       gasPrice: 0,
     },
