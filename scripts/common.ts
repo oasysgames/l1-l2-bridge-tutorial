@@ -138,9 +138,59 @@ const getTransactionReceiptFromMsgHash = async (
   return undefined
 }
 
+const getTransactionReceiptFromMsgHashV2 = async (
+  messengerAddress: string,
+  msgHash: string,
+): Promise<undefined | TransactionReceipt> => {
+  const POLL_INTERVAL = 1000
+  const BLOCKS_TO_FETCH = 5760 // 1 day
+
+  // https://github.com/oasysgames/oasys-optimism/blob/efc5337e47936b2bbe2ea1a2c5281a210e0fe15e/packages/contracts/contracts/libraries/bridge/ICrossDomainMessenger.sol#L19
+  const RELAYED_MESSAGE = hre.ethers.utils.id(`RelayedMessage(bytes32)`)
+
+  // https://github.com/oasysgames/oasys-optimism/blob/efc5337e47936b2bbe2ea1a2c5281a210e0fe15e/packages/contracts/contracts/libraries/bridge/ICrossDomainMessenger.sol#L20
+  const FAILED_RELAYED_MESSAGE = hre.ethers.utils.id(
+    `FailedRelayedMessage(bytes32)`,
+  )
+
+  let matches: Log[] = []
+
+  // scan for transaction with specified message
+  const blockNumber = await hre.ethers.provider.getBlockNumber()
+  const startingBlock = Math.max(blockNumber - BLOCKS_TO_FETCH, 0)
+  const successFilter: Filter = {
+    address: messengerAddress,
+    topics: [RELAYED_MESSAGE],
+    fromBlock: startingBlock,
+  }
+  const failureFilter: Filter = {
+    address: messengerAddress,
+    topics: [FAILED_RELAYED_MESSAGE],
+    fromBlock: startingBlock,
+  }
+  const successLogs = await hre.ethers.provider.getLogs(successFilter)
+  const failureLogs = await hre.ethers.provider.getLogs(failureFilter)
+  const logs = successLogs.concat(failureLogs)
+  matches = logs.filter((log: Log) => log.topics[1] === msgHash)
+
+  // Message was relayed in the past
+  if (matches.length > 0) {
+    if (matches.length > 1) {
+      throw Error('Found multiple transactions relaying the same message hash.')
+    }
+    return await hre.ethers.provider.getTransactionReceipt(
+      matches[0].transactionHash,
+    )
+  } else if (matches.length === 0) {
+    throw Error('Not found transaction relaying.')
+  }
+  return undefined
+}
+
 export {
   getCrossDomainMessageHashesFromTx,
   getTransactionReceiptFromMsgHash,
+  getTransactionReceiptFromMsgHashV2,
   switchNetwork,
   addresses,
   log,
