@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERC20 Viewer with Metamask Connection</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="./dist/bundle.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4 mb-4">ERC20 Token Information</h1>
+        <button id="connectButton" class="btn btn-primary mb-3">Connect to Metamask</button>
+        <p id="accountAddress" class="mb-3">Not connected</p>
+        <div class="card mb-3">
+            <div class="card-body">
+                <p><strong>Name:</strong> <span id="tokenName"></span></p>
+                <p><strong>Symbol:</strong> <span id="tokenSymbol"></span></p>
+                <p><strong>Total Supply:</strong> <span id="tokenSupply"></span></p>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Your Balance</h5>
+                <p id="tokenBalance">Connect your wallet to view balance.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Mint Tokens</h5>
+                <div class="form-group">
+                    <label for="mintAmount">Amount to Mint</label>
+                    <input type="number" id="mintAmount" class="form-control">
+                </div>
+                <button id="mintButton" class="btn btn-success">Mint Tokens</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // *変更が必要な箇所*
+        // DeployされたERC20トークンのアドレスを指定
+        const ERC20_ADDRESS = "0x66d21ec29f2B8e72626FACf3EBbFFc2458e6B221"
+        let sdk;
+        let userAccount;
+        
+
+        async function connectMetamask() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    userAccount = accounts[0];
+                    sdk = new Sdk(window.ethereum, ERC20_ADDRESS)
+                    await sdk.connectMetamask();
+                    
+                    // web3 = new Web3(window.ethereum);
+                    // tokenContract = new web3.eth.Contract(erc20Abi, erc20Address);
+
+                    document.getElementById('accountAddress').innerText = `Connected: ${userAccount}`;
+                    getTokenData();
+                    getUserBalance();
+                } catch (error) {
+                    console.error("Error connecting to Metamask", error);
+                }
+            } else {
+                alert('Metamask is not installed. Please install it to use this feature.');
+            }
+        }
+
+        document.getElementById('connectButton').addEventListener('click', connectMetamask);
+
+        async function getTokenData() {
+            const { name, symbol, totalSupply } = await sdk.getTokenData();
+
+            document.getElementById('tokenName').innerText = name;
+            document.getElementById('tokenSymbol').innerText = symbol;
+            document.getElementById('tokenSupply').innerText = totalSupply;
+        }
+
+        async function getUserBalance() {
+            const balance = await sdk.getUserBalance(userAccount);
+            document.getElementById('tokenBalance').innerText = `Balance: ${balance}`;
+        }
+
+        // トークンをMintする関数
+        async function mintTokens() {
+            const amount = document.getElementById('mintAmount').value;
+            const receipt = await sdk.mintTokens(userAccount, amount);
+            if (receipt.status !== 1) {
+                console.error(receipt)
+                alert('Transaction failed');
+                return;
+            }
+            console.log(`Transaction hash: ${receipt.hash}`);
+            getUserBalance(); // バランスの更新
+            getTokenData(); // トークンの総量の更新
+        }
+
+        document.getElementById('mintButton').addEventListener('click', mintTokens);
+    </script>
+</body>
+</html>
