@@ -44,17 +44,3 @@ npx hardhat mint20 --network l1 --address 0x00.. --to 0x00.. --amount 123
 npx hardhat mint721 --network l1 --address 0x00.. --to 0x00.. --token-id 123
 
 ```
-
-
-## Deploy ERC20/721 Contracts
-```console
-npx hardhat deploy20 --network l1 --name "mock erc20" --symbol MT20
-npx hardhat deploy20 --network l2 --name "mock erc20" --symbol MT20 --l1-token 0xDc3af65eCBD339309Ec55F109CB214E0325c5eD4
-
-npx hardhat deploy721 --network l1 --name "mock erc721" --symbol MT721
-npx hardhat deploy721 --network l2 --name "mock erc20" --symbol MT20 --l1-token 0x906F740aa0C7810c6b164d00d979425e3B074e85
-
-npx hardhat mint20 --network l1 --address 0xb1B6755944e933e9a39d1c6Af068899FDB149336 --to 0xccf3e6b439D0B0546fc2ac48afb3f2Cac0c84d26 --amount 123
-
-npx hardhat mint721 --network l1 --address 0x4688e596Fb8ffAa9F7c1f02985B44651CF642123 --to 0xccf3e6b439D0B0546fc2ac48afb3f2Cac0c84d26 --token-id 123
-```
