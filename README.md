@@ -7,7 +7,7 @@ Although the primary objective is to provide a tutorial, we also offer a useful 
 
 ## Steps to Execute Bidirectional Bridge
 1. Deploy Contracts
-The assets allowed to bridge are native tokens (OAS), ERC20, and ERC721(NFT). To bridge ERCs, you first need to deploy contracts on L1 and L2. To do this, please follow the instructions in the [contract](./contract) directory.
+    - The assets allowed to bridge are native tokens (OAS), ERC20, and ERC721(NFT). To bridge ERCs, you first need to deploy contracts on L1 and L2. To do this, please follow the instructions in the [contract](./contract) directory.
 
 2. Execute Bridging
-You can execute bridging using a simple UI. To start the UI, you need to build the code and run the server first. Please follow the instructions in the [front](./front) directory.
+    - You can execute bridging using a simple UI. To start the UI, you need to build the code and run the server first. Please follow the instructions in the [front](./front) directory.
