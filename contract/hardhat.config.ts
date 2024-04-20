@@ -27,7 +27,9 @@ const config: HardhatUserConfig = {
     l2: {
       // url: "https://rpc.sandverse.oasys.games",
       url: "http://127.0.0.1:18545",
-      accounts: [DEPLOYER_KEY]
+      accounts: [DEPLOYER_KEY],
+      initialBaseFeePerGas: 0,
+      gasPrice: 0,
     },
   },
   namedAccounts: {
