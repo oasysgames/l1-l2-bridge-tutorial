@@ -1,3 +1,5 @@
+import { BigNumber } from "ethers";
+
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export function splitArray<T>(array: T[]): [T[], T[]] {
@@ -6,6 +8,10 @@ export function splitArray<T>(array: T[]): [T[], T[]] {
   const secondHalf = array.slice(middle);
   return [firstHalf, secondHalf];
 }
+
+export const ethToWei = (eth: number): bigint => {
+  return BigNumber.from(eth).mul(BigNumber.from(10).pow(18)).toBigInt();
+};
 
 export const assertAddresse = (address: string): string => {
   // Checks if the address has the correct length and hex characters
