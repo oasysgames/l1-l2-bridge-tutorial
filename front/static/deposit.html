@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/favicon.ico" id="favicon">
+    <title>L1 to L2 Bridge Tutorial</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Your custom CSS -->
+    <style>
+        /* Style to make "Withdraw" blue */
+        .withdraw-text {
+            color: blue;
+        }
+    </style>
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- load SDK -->
+    <script src="../dist/bundle.js"></script>
+</head>
+<body>
+<div class="container mt-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <div class="navbar-brand">
+                <img src="/static/logo.png" alt="Logo" height="30">
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Add additional navbar items if needed -->
+                </ul>
+                <form class="d-flex">
+                    <!-- Add search or other form elements if needed -->
+                </form>
+                <button class="btn btn-secondary me-2" id="backButton">Back</button>
+            </div>
+        </div>
+    </nav>
+
+    <h1 class="mt-4 mb-4">L1->L2 Bridge: <span class="withdraw-text">Deposit</span></h1>
+    <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+    <div id="walletInfo" class="my-2"></div>
+
+    <!-- Native Assets (OAS) Section -->
+    <div class="section my-3">
+        <h2>Native Assets (OAS)</h2>
+        <div id="ethBalance" class="mb-2"></div>
+        <div class="row g-3">
+            <div class="col-sm">
+                <input id="ethAmount" type="number" placeholder="Amount of OAS" class="form-control">
+            </div>
+            <div class="col-sm">
+                <input id="ethRecipient" type="text" placeholder="Recipient Address" class="form-control">
+            </div>
+            <div class="col-sm-auto">
+                <button id="depositETH" class="btn btn-success">Deposit</button>
+            </div>
+        </div>
+        <div id="ethMessage" class="alert" role="alert" style="display:none;"></div>
+    </div>
+
+    <!-- ERC20 Tokens Section -->
+    <div class="section my-3">
+        <h2>ERC20 Tokens</h2>
+        <div id="erc20Balance" class="mb-2"></div>
+        <div class="row g-3">
+            <div class="col-sm">
+                <input id="erc20L1Address" type="text" placeholder="L1 Contract Address" class="form-control">
+            </div>
+            <div class="col-sm">
+                <input id="erc20L2Address" type="text" placeholder="L2 Contract Address" class="form-control">
+            </div>
+            <div class="col-sm-2">
+                <input id="erc20Amount" type="number" placeholder="Amount of Tokens" class="form-control">
+            </div>
+            <div class="col-sm">
+                <input id="erc20Recipient" type="text" placeholder="Recipient Address" class="form-control">
+            </div>
+            <div class="col-sm-auto">
+                <button id="depositERC20" class="btn btn-success">Deposit</button>
+            </div>
+        </div>
+        <div id="erc20Message" class="alert" role="alert" style="display:none;"></div>
+    </div>
+
+    <!-- ERC721 Tokens Section -->
+    <div class="section my-3">
+        <h2>ERC721 Tokens</h2>
+        <div class="row g-3">
+            <div class="col-sm">
+                <input id="erc721L1Address" type="text" placeholder="L1 Contract Address" class="form-control">
+            </div>
+            <div class="col-sm">
+                <input id="erc721L2Address" type="text" placeholder="L2 Contract Address" class="form-control">
+            </div>
+            <div class="col-sm-2">
+                <input id="erc721TokenId" type="text" placeholder="Token ID" class="form-control">
+            </div>
+            <div class="col-sm">
+                <input id="erc721Recipient" type="text" placeholder="Recipient Address" class="form-control">
+            </div>
+            <div class="col-sm-auto">
+                <button id="depositERC721" class="btn btn-success">Deposit</button>
+            </div>
+        </div>
+        <div id="erc721Message" class="alert" role="alert" style="display:none;"></div>
+    </div>
+
+    <!-- footer -->
+    <hr/>
+    <p class="text-muted">Powered by <a href="https://www.oasys.games/" target="_blank">Oasys</a></p>
+</div>
+
+<script>
+    // ----- Area Needs to Change depend on Verse -----
+    const addressManager = "0x0000000000000000000000000000000000000000"
+    const l1CrossDomainMessenger= "0x86DdFFd80FF6a8e7BA6860b7cd73FE98766113AF"
+    const l1StandardBridge = "0x1db7c1d7f83eFD596DeBD439a7B84a3B80499C85"
+    const l1ERC721Bridge = "0x1F66a4193bdb4C8E0E64EF92Ebc0C114fd2E6113"
+    const portalAddress = "0xf581703dab51455a3018564ab2d1Ad4572b12d9E"
+    const outputOracle = "0xb853d23571743d34A1960e7c53Ef4fFBa4E8157D"
+    // ----- Area Needs to Change depend on Verse -----
+
+    const l2RPC = "http://127.0.0.1:18545";
+    const isL1 = true;
+    let sdk;
+    let userAccount;
+
+    $(document).ready(function() {
+
+        // Connect Wallet
+        $('#connectWallet').click(async () => {
+            try {
+                sdk = new Sdk(window.ethereum, l2RPC, isL1, addressManager, l1CrossDomainMessenger, l1StandardBridge, l1ERC721Bridge, portalAddress, outputOracle);
+                const accounts = await sdk.connectMetamask()
+                userAccount = accounts[0];
+                // display network and user address
+                const network = await sdk.getNetwork();
+                $('#walletInfo').html(`Connected to ${network.name}(ChainID:${network.chainId}) with address ${userAccount}`);
+            } catch (error) {
+                $('#walletInfo').html(`Error: ${error.message}`).addClass('alert alert-danger');
+            }
+        });
+
+        // Deposit OAS
+        $('#depositETH').click(async () => {
+            // disable button
+            $('#depositETH').prop('disabled', true);
+
+            // show depositing...
+            $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Depositing OAS...');
+
+            let amount = $('#ethAmount').val();
+            let recipient = $('#ethRecipient').val();
+            try {
+                recipient = sdk.util.assertAddresse(recipient);
+                amount = sdk.util.ethToWei(amount);
+
+                // deposit
+                const tx = await sdk.messenger.depositETH(amount.toString(), recipient);
+                const receipt = await tx.wait();
+                console.log(receipt);
+
+                // wait until message is relayed
+                $('#ethMessage').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash}`);
+                const RELAYED = 6;
+                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+
+                // show balance, with success message
+                const balances = await sdk.getBalances(userAccount);
+                $('#ethMessage').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+            } catch (error) {
+                $('#ethMessage').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
+            }
+
+            // enable button
+            $('#depositETH').prop('disabled', false);
+        });
+
+        // Deposit ERC20
+        $('#depositERC20').click(async () => {
+            // disable button
+            $('#depositERC20').prop('disabled', true);
+
+            // show depositing...
+            $('#erc20Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
+
+            let l1Address = $('#erc20L1Address').val();
+            let l2Address = $('#erc20L2Address').val();
+            let amount = $('#erc20Amount').val();
+            let recipient = $('#erc20Recipient').val();
+            try {
+                l1Address = sdk.util.assertAddresse(l1Address);
+                l2Address = sdk.util.assertAddresse(l2Address);
+                recipient = sdk.util.assertAddresse(recipient);
+                amount = sdk.util.ethToWei(amount);
+
+                // approve
+                let tx = await sdk.messenger.approveERC20(l1Address, l2Address, amount.toString());
+                let receipt = await tx.wait();
+                console.log(receipt)
+                $('#erc20Message').text(`Depositing..., previous approval txHash: ${receipt.transactionHash}`);
+
+                // deposit
+                tx = await sdk.messenger.depositERC20(l1Address, l2Address, amount.toString(), receipt);
+                receipt = await tx.wait();
+                console.log(receipt);
+                $('#erc20Message').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash}`);
+
+                // wait until message is relayed
+                const RELAYED = 6;
+                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+
+                // show balance, with success message
+                const balances = await sdk.getERC20Balance(userAccount, l1Address, l2Address);
+                $('#erc20Message').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+            } catch (error) {
+                $('#erc20Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
+            }
+
+            // enable button
+            $('#depositERC20').prop('disabled', false);
+        });
+
+        // Deposit ERC721
+        $('#depositERC721').click(async () => {
+            // disable button
+            $('#depositERC721').prop('disabled', true);
+
+            // show depositing...
+            $('#erc721Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
+
+            let l1Address = $('#erc721L1Address').val();
+            let l2Address = $('#erc721L2Address').val();
+            let tokenId = $('#erc721TokenId').val();
+            let recipient = $('#erc721Recipient').val();
+            try {
+                l1Address = sdk.util.assertAddresse(l1Address);
+                l2Address = sdk.util.assertAddresse(l2Address);
+                recipient = sdk.util.assertAddresse(recipient);
+
+                // approve
+                let tx = await sdk.messenger.approveERC20(l1Address, l2Address, tokenId);
+                let receipt = await tx.wait();
+                console.log(receipt)
+                $('#erc721Message').text(`Depositing..., previous approval txHash: ${receipt.transactionHash}`);
+
+                // deposit
+                tx = await sdk.messenger.depositERC20(l1Address, l2Address, tokenId);
+                receipt = await tx.wait();
+                console.log(receipt);
+                $('#erc721Message').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash}`);
+
+                // wait until message is relayed
+                const RELAYED = 6;
+                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+
+                // show balance, with success message
+                const balances = await sdk.getERC721Balance(userAccount, l1Address, l2Address);
+                $('#erc721Message').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+            } catch (error) {
+                $('#erc721Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
+            }
+
+            // enable button
+            $('#depositERC721').prop('disabled', false);
+        });
+
+        // Function to handle going back and logging out
+        $('#backButton').click(function() {
+            // Disconnect MetaMask
+            if (window.ethereum) {
+                ethereum.send('eth_requestAccounts').then(function() {
+                    ethereum.send('eth_logout');
+                });
+            }
+            // Go back
+            window.history.back();
+        });
+    });
+</script>
+
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

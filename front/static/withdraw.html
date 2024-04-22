@@ -7,10 +7,17 @@
     <title>L1 to L2 Bridge Tutorial</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Your custom CSS -->
+    <style>
+        /* Style to make "Withdraw" blue */
+        .withdraw-text {
+            color: orange;
+        }
+    </style>
     <!-- jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- load SDK -->
-    <script src="./dist/bundle.js"></script>
+    <script src="../dist/bundle.js"></script>
 </head>
 <body>
 <div class="container mt-4">
@@ -34,7 +41,7 @@
         </div>
     </nav>
 
-    <h1 class="mt-4 mb-4">L1->L2 Bridge (Deposit)</h1>
+    <h1 class="mt-4 mb-4">L2->L1 Bridge: <span class="withdraw-text">Withdraw</span></h1>
     <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
     <div id="walletInfo" class="my-2"></div>
 
@@ -50,7 +57,7 @@
                 <input id="ethRecipient" type="text" placeholder="Recipient Address" class="form-control">
             </div>
             <div class="col-sm-auto">
-                <button id="depositETH" class="btn btn-success">Deposit</button>
+                <button id="withdrawETH" class="btn btn-success">Withdraw</button>
             </div>
         </div>
         <div id="ethMessage" class="alert" role="alert" style="display:none;"></div>
@@ -74,7 +81,7 @@
                 <input id="erc20Recipient" type="text" placeholder="Recipient Address" class="form-control">
             </div>
             <div class="col-sm-auto">
-                <button id="depositERC20" class="btn btn-success">Deposit</button>
+                <button id="withdrawERC20" class="btn btn-success">Withdraw</button>
             </div>
         </div>
         <div id="erc20Message" class="alert" role="alert" style="display:none;"></div>
@@ -97,11 +104,15 @@
                 <input id="erc721Recipient" type="text" placeholder="Recipient Address" class="form-control">
             </div>
             <div class="col-sm-auto">
-                <button id="depositERC721" class="btn btn-success">Deposit</button>
+                <button id="withdrawERC721" class="btn btn-success">Withdraw</button>
             </div>
         </div>
         <div id="erc721Message" class="alert" role="alert" style="display:none;"></div>
     </div>
+
+    <!-- footer -->
+    <hr/>
+    <p class="text-muted">Powered by <a href="https://www.oasys.games/" target="_blank">Oasys</a></p>
 </div>
 
 <script>
@@ -114,8 +125,8 @@
     const outputOracle = "0xb853d23571743d34A1960e7c53Ef4fFBa4E8157D"
     // ----- Area Needs to Change depend on Verse -----
 
-    const l2RPC = "http://127.0.0.1:18545";
-    const isL1 = true;
+    const l1RPC = "http://127.0.0.1:8545";
+    const isL1 = false;
     let sdk;
     let userAccount;
 
@@ -124,7 +135,7 @@
         // Connect Wallet
         $('#connectWallet').click(async () => {
             try {
-                sdk = new Sdk(window.ethereum, l2RPC, isL1, addressManager, l1CrossDomainMessenger, l1StandardBridge, l1ERC721Bridge, portalAddress, outputOracle);
+                sdk = new Sdk(window.ethereum, l1RPC, isL1, addressManager, l1CrossDomainMessenger, l1StandardBridge, l1ERC721Bridge, portalAddress, outputOracle);
                 const accounts = await sdk.connectMetamask()
                 userAccount = accounts[0];
                 // display network and user address
@@ -135,47 +146,46 @@
             }
         });
 
-        // Deposit OAS
-        $('#depositETH').click(async () => {
+        // Withdraw OAS
+        $('#withdrawETH').click(async () => {
             // disable button
-            $('#depositETH').prop('disabled', true);
+            $('#withdrawETH').prop('disabled', true);
 
-            // show depositing...
-            $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Depositing OAS...');
+            // show withdrawing...
+            $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Withdrawing OAS...');
 
             let amount = $('#ethAmount').val();
             let recipient = $('#ethRecipient').val();
             try {
                 recipient = sdk.util.assertAddresse(recipient);
-                amount = sdk.util.ethToWei(amount);
+                // amount = sdk.util.ethToWei(amount);
 
-                // deposit
-                const tx = await sdk.messenger.depositETH(amount.toString(), recipient);
+                // withdraw
+                const tx = await sdk.messenger.withdrawETH(amount.toString(), recipient);
                 const receipt = await tx.wait();
                 console.log(receipt);
+                $('#ethMessage').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
 
                 // wait until message is relayed
-                $('#ethMessage').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash},`);
-                const RELAYED = 6;
-                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+                await sdk.waitForMessageRelayed(tx.hash);
 
                 // show balance, with success message
-                const balances = await sdk.getBalances(userAccount, l1);
-                $('#ethMessage').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+                const balances = await sdk.getBalances(userAccount);
+                $('#ethMessage').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
             } catch (error) {
                 $('#ethMessage').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
             }
 
             // enable button
-            $('#depositETH').prop('disabled', false);
+            $('#withdrawETH').prop('disabled', false);
         });
 
-        // Deposit ERC20
-        $('#depositERC20').click(async () => {
+        // Withdraw ERC20
+        $('#withdrawERC20').click(async () => {
             // disable button
-            $('#depositERC20').prop('disabled', true);
+            $('#withdrawERC20').prop('disabled', true);
 
-            // show depositing...
+            // show withdrawing...
             $('#erc20Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
 
             let l1Address = $('#erc20L1Address').val();
@@ -188,39 +198,32 @@
                 recipient = sdk.util.assertAddresse(recipient);
                 amount = sdk.util.ethToWei(amount);
 
-                // approve
-                let tx = await sdk.messenger.approveERC20(l1Address, l2Address, amount.toString());
-                let receipt = await tx.wait();
-                console.log(receipt)
-                $('#erc20Message').text(`Depositing..., approval txHash: ${receipt.transactionHash},`);
-
-                // deposit
-                tx = await sdk.messenger.depositERC20(l1Address, l2Address, amount.toString(), receipt);
-                receipt = await tx.wait();
+                // withdraw
+                const tx = await sdk.messenger.withdrawERC20(l1Address, l2Address, amount.toString(), recipient);
+                const receipt = await tx.wait();
                 console.log(receipt);
-                $('#erc20Message').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash},`);
+                $('#erc20Message').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
 
                 // wait until message is relayed
-                const RELAYED = 6;
-                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+                await sdk.waitForMessageRelayed(tx.hash);
 
                 // show balance, with success message
                 const balances = await sdk.getERC20Balance(userAccount, l1Address, l2Address);
-                $('#erc20Message').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+                $('#erc20Message').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
             } catch (error) {
                 $('#erc20Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
             }
 
             // enable button
-            $('#depositERC20').prop('disabled', false);
+            $('#withdrawERC20').prop('disabled', false);
         });
 
-        // Deposit ERC721
-        $('#depositERC721').click(async () => {
+        // Withdraw ERC721
+        $('#withdrawERC721').click(async () => {
             // disable button
-            $('#depositERC721').prop('disabled', true);
+            $('#withdrawERC721').prop('disabled', true);
 
-            // show depositing...
+            // show withdrawing...
             $('#erc721Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
 
             let l1Address = $('#erc721L1Address').val();
@@ -232,57 +235,40 @@
                 l2Address = sdk.util.assertAddresse(l2Address);
                 recipient = sdk.util.assertAddresse(recipient);
 
-                const a = (await sdk.getERC721(userAccount, l1Address, l2Address)).l2
-
-                console.log(await a.balanceOf(userAccount))
-                console.log(await a.name())
-                // console.log(await a.ownerOf(1))
-
-                // approve
-                let tx = await sdk.messenger.approveERC20(l1Address, l2Address, tokenId);
-                let receipt = await tx.wait();
-                console.log(receipt)
-                $('#erc721Message').text(`Depositing..., approval txHash: ${receipt.transactionHash},`);
-
-                // deposit
-                tx = await sdk.messenger.depositERC20(l1Address, l2Address, tokenId);
-                receipt = await tx.wait();
+                // withdraw
+                const tx = await sdk.messenger.withdrawERC20(l1Address, l2Address, tokenId);
+                const receipt = await tx.wait();
                 console.log(receipt);
-                $('#erc721Message').text(`Waiting for message to be relayed..., txHash: ${receipt.transactionHash},`);
+                $('#erc721Message').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
 
                 // wait until message is relayed
-                const RELAYED = 6;
-                await sdk.messenger.waitForMessageStatus(tx.hash, RELAYED);
+                await sdk.waitForMessageRelayed(tx.hash);
 
                 // show balance, with success message
                 const balances = await sdk.getERC721Balance(userAccount, l1Address, l2Address);
-                $('#erc721Message').removeClass('alert-info').addClass('alert-success').text(`Succeed deposit, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+                $('#erc721Message').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
             } catch (error) {
                 $('#erc721Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
             }
 
             // enable button
-            $('#depositERC721').prop('disabled', false);
+            $('#withdrawERC721').prop('disabled', false);
         });
 
-
-        $(document).ready(function() {
-            // Function to handle going back and logging out
-            $('#backButton').click(function() {
-                // Disconnect MetaMask
-                if (window.ethereum) {
-                    ethereum.send('eth_requestAccounts').then(function() {
-                        ethereum.send('eth_logout');
-                    });
-                }
-                // Go back
-                window.history.back();
-            });
+        // Function to handle going back and logging out
+        $('#backButton').click(function() {
+            // Disconnect MetaMask
+            if (window.ethereum) {
+                ethereum.send('eth_requestAccounts').then(function() {
+                    ethereum.send('eth_logout');
+                });
+            }
+            // Go back
+            window.history.back();
         });
     });
 </script>
 
-<!-- Optional JavaScript -->
 <!-- Bootstrap Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

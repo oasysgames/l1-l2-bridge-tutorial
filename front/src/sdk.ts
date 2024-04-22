@@ -29,6 +29,7 @@ export class BridgeSDK {
   private contracts: DeepPartial<OEContractsLike>;
   private l1StandardBridge: string;
   private l1ERC721Bridge: string;
+  private MAX_RETRIES: number = 100;
 
   constructor(
     ethereum: ExternalProvider,
@@ -151,46 +152,37 @@ export class BridgeSDK {
     };
   }
 
-  async getERC721(
-    address: string,
-    tokenL1: string,
-    tokenL2: string,
-  ): Promise<{
-    l1: Contract;
-    l2: Contract;
-  }> {
-    const L1Provider = this.isL1 ? this.eProvider : this.jProvider;
-    const L2Provider = this.isL1 ? this.jProvider : this.eProvider;
-    return {
-      l1: new Contract(tokenL1, ERC721.abi, L1Provider),
-      l2: new Contract(tokenL2, ERC721.abi, L2Provider),
-    };
+  async waitForMessageRelayed(
+    txHash: string,
+    retry: number = this.MAX_RETRIES,
+  ): Promise<void> {
+    const RELAYED = 6;
+    const RETRY_DELAY_MS = 5000; // Delay between retries in milliseconds
+    let attempts = 0;
+    while (attempts < retry) {
+      try {
+        await this.messenger.waitForMessageStatus(txHash, RELAYED);
+        return; // Success, exit the loop and function
+      } catch (error: any) {
+        if (
+          typeof error.message === "string" &&
+          error.message.includes("withdrawal index 0 out of bounds")
+        ) {
+          attempts++;
+          console.log(
+            `Attempt ${attempts}: Encountered a retryable error, retrying...`,
+          );
+          if (attempts >= retry) {
+            throw new Error(
+              `Retry limit reached with persistent errors. err: ${error.message}`,
+            );
+          }
+          await this.util.sleep(RETRY_DELAY_MS); // Wait before retrying
+        } else {
+          // If error is not the one we're looking for, rethrow it
+          throw error;
+        }
+      }
+    }
   }
-
-  // async getTokenData(): Promise<{
-  //   name: string;
-  //   symbol: string;
-  //   totalSupply: string;
-  // }> {
-  //   const name = await this.erc20.name();
-  //   const symbol = await this.erc20.symbol();
-  //   const totalSupply = await this.erc20.totalSupply();
-  //   return { name, symbol, totalSupply };
-  // }
-
-  // async getUserBalance(userAddress: string): Promise<string> {
-  //   return this.erc20.balanceOf(userAddress);
-  // }
-
-  // async mintTokens(
-  //   account: string,
-  //   amount: string,
-  // ): Promise<ContractTransactionReceipt | null> {
-  //   const amountWei = parseUnits(amount, 18);
-  //   const tx: ContractTransactionResponse = await this.erc20.mint(
-  //     account,
-  //     amountWei,
-  //   );
-  //   return await tx.wait();
-  // }
 }
