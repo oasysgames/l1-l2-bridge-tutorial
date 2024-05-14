@@ -117,13 +117,13 @@
 
 <script>
     // ----- Area Needs to Change depend on Verse -----
-    const l1RPC = "http://127.0.0.1:8545";
-    const addressManager = "0x0000000000000000000000000000000000000000"
-    const l1CrossDomainMessenger= "0x86DdFFd80FF6a8e7BA6860b7cd73FE98766113AF"
-    const l1StandardBridge = "0x1db7c1d7f83eFD596DeBD439a7B84a3B80499C85"
-    const l1ERC721Bridge = "0x1F66a4193bdb4C8E0E64EF92Ebc0C114fd2E6113"
-    const portalAddress = "0xf581703dab51455a3018564ab2d1Ad4572b12d9E"
-    const outputOracle = "0xb853d23571743d34A1960e7c53Ef4fFBa4E8157D"
+    const l1RPC = "https://rpc.testnet.oasys.games";
+    const addressManager = "0xf1fCb5d5a604819e83118c0BBFe426aF6dD7B9a4"
+    const l1CrossDomainMessenger= "0xa04B03350eE9E3fdd1C2f63fAD5e0CabBb476594"
+    const l1StandardBridge = "0x9245e19eB88de2534E03E764FB2a5f194e6d97AD"
+    const l1ERC721Bridge = "0x8D736Ad22D106dE9Cf50D0D18D571041a47DD333"
+    const portalAddress = "0xd1F4638035B367D7874b6fdc118bFD44bF62FA42"
+    const outputOracle = "0x018286121c03e7B8dB00fe5cd3CA3f9979c8F51d"
     // ----- Area Needs to Change depend on Verse -----
 
     const isL1 = false;
@@ -158,10 +158,16 @@
             let recipient = $('#ethRecipient').val();
             try {
                 recipient = sdk.util.assertAddresse(recipient);
-                // amount = sdk.util.ethToWei(amount);
+                amount = sdk.util.ethToWei(amount);
 
                 // withdraw
-                const tx = await sdk.messenger.withdrawETH(amount.toString(), recipient);
+                const tx = await sdk.messenger.withdrawETH(amount.toString(), {
+                    recipient,
+                    overrides: {
+                        maxFeePerGas: 0,
+                        maxPriorityFeePerGas: 0
+                    }
+                });
                 const receipt = await tx.wait();
                 console.log(receipt);
                 $('#ethMessage').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
