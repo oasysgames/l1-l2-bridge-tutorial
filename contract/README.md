@@ -13,6 +13,11 @@ Set up the environment file. Private keys need to be funded on L1 and L2 beforeh
 cp .env.sample .env
 ```
 
+Compile contracts:
+```shell
+yarn compile
+```
+
 ## Deploy
 Deploy contracts on L1 and L2:
 ```sh

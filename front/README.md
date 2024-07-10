@@ -10,6 +10,12 @@ Edit the following HTML files to suit your environment. Specifically, modify the
 - [deposit](./static/deposit.html)
 - [withdraw](./static/deposit.html)
 
+Build frontend:
+```shell
+yarn build
+```
+
+
 To start the server, use the command:
 ```shell
 yarn start
