@@ -22,3 +22,4 @@ dist
 
 # For Mac
 .DS_Store
+.idea
