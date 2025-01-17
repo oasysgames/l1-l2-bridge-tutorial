@@ -16,8 +16,6 @@
     </style>
     <!-- jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- load SDK -->
-    <script src="../dist/bundle.js"></script>
 </head>
 <body>
 <div class="container mt-4">
@@ -87,8 +85,8 @@
         <div id="erc20Message" class="alert" role="alert" style="display:none;"></div>
     </div>
 
-    <!-- ERC721 Tokens Section -->
-    <div class="section my-3">
+    <!-- ERC721 Tokens Section - TODO -->
+    <!-- <div class="section my-3">
         <h2>ERC721 Tokens</h2>
         <div class="row g-3">
             <div class="col-sm">
@@ -108,7 +106,7 @@
             </div>
         </div>
         <div id="erc721Message" class="alert" role="alert" style="display:none;"></div>
-    </div>
+    </div> -->
 
     <!-- footer -->
     <hr/>
@@ -116,31 +114,22 @@
 </div>
 
 <script>
-    // ----- Area Needs to Change depend on Verse -----
-    const l1RPC = "https://rpc.testnet.oasys.games";
-    const addressManager = "0xf1fCb5d5a604819e83118c0BBFe426aF6dD7B9a4"
-    const l1CrossDomainMessenger= "0xa04B03350eE9E3fdd1C2f63fAD5e0CabBb476594"
-    const l1StandardBridge = "0x9245e19eB88de2534E03E764FB2a5f194e6d97AD"
-    const l1ERC721Bridge = "0x8D736Ad22D106dE9Cf50D0D18D571041a47DD333"
-    const portalAddress = "0xd1F4638035B367D7874b6fdc118bFD44bF62FA42"
-    const outputOracle = "0x018286121c03e7B8dB00fe5cd3CA3f9979c8F51d"
-    // ----- Area Needs to Change depend on Verse -----
-
-    const isL1 = false;
     let sdk;
     let userAccount;
+    let verseVersion;
 
     $(document).ready(function() {
 
         // Connect Wallet
         $('#connectWallet').click(async () => {
             try {
-                sdk = new Sdk(window.ethereum, l1RPC, isL1, addressManager, l1CrossDomainMessenger, l1StandardBridge, l1ERC721Bridge, portalAddress, outputOracle);
-                const accounts = await sdk.connectMetamask()
-                userAccount = accounts[0];
-                // display network and user address
-                const network = await sdk.getNetwork();
-                $('#walletInfo').html(`Connected to ${network.name}(ChainID:${network.chainId}) with address ${userAccount}`);
+                // connect to l2
+                sdk = new Sdk(true)
+                userAccount = await sdk.connectMetamask()
+                verseVersion = sdk.getVerseVersion()
+
+                const [chainId, name] = await sdk.getConnectedNetwork()
+                $('#walletInfo').html(`Connected to ${name} (ChainID: ${chainId}) with address ${userAccount}`);
             } catch (error) {
                 $('#walletInfo').html(`Error: ${error.message}`).addClass('alert alert-danger');
             }
@@ -151,33 +140,31 @@
             // disable button
             $('#withdrawETH').prop('disabled', true);
 
-            // show withdrawing...
-            $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Withdrawing OAS...');
-
             let amount = $('#ethAmount').val();
             let recipient = $('#ethRecipient').val();
+
+            let balances = await sdk.getBalances(userAccount);
+            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}<br/>Withdrawing OAS...`;
+            // show withdrawing...
+            $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').html(messages);
             try {
-                recipient = sdk.util.assertAddresse(recipient);
-                amount = sdk.util.ethToWei(amount);
+                const start = Date.now()
+                
+                const receipt = await sdk.withdrawOAS(amount, recipient)
+                let t = Date.now()
+                messages += `<br/> L2 initiate txHash: ${receipt.transactionHash} (${(t - start)/1000}s)`
+                $('#ethMessage').html(messages)
 
-                // withdraw
-                const tx = await sdk.messenger.withdrawETH(amount.toString(), {
-                    recipient,
-                    overrides: {
-                        maxFeePerGas: 0,
-                        maxPriorityFeePerGas: 0
-                    }
-                });
-                const receipt = await tx.wait();
-                console.log(receipt);
-                $('#ethMessage').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
 
-                // wait until message is relayed
-                await sdk.waitForMessageRelayed(tx.hash);
+                const l1FinalizedTxHash = await sdk.waitForWithdrawalL1Tx(receipt, verseVersion === 1 ? amount : '0')
+                t = Date.now()
+                messages += `<br/> L1 finalized txHash: ${l1FinalizedTxHash} (${(t - start)/1000}s)`
+                $('#ethMessage').html(messages)
 
                 // show balance, with success message
-                const balances = await sdk.getBalances(userAccount);
-                $('#ethMessage').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+                balances = await sdk.getBalances(userAccount);
+                messages += `<br/>Succeed withdraw, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`
+                $('#ethMessage').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {
                 $('#ethMessage').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
             }
@@ -191,31 +178,38 @@
             // disable button
             $('#withdrawERC20').prop('disabled', true);
 
-            // show withdrawing...
-            $('#erc20Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
-
             let l1Address = $('#erc20L1Address').val();
             let l2Address = $('#erc20L2Address').val();
             let amount = $('#erc20Amount').val();
             let recipient = $('#erc20Recipient').val();
+
+            let balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
+            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`;
+            messages += `<br/>Withdrawing...`
+
+            // show withdrawing...
+            $('#erc20Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').html(messages);
+
             try {
-                l1Address = sdk.util.assertAddresse(l1Address);
-                l2Address = sdk.util.assertAddresse(l2Address);
-                recipient = sdk.util.assertAddresse(recipient);
-                amount = sdk.util.ethToWei(amount);
+                const start = Date.now()
 
                 // withdraw
-                const tx = await sdk.messenger.withdrawERC20(l1Address, l2Address, amount.toString(), recipient);
-                const receipt = await tx.wait();
+                const receipt = await sdk.withdraw(amount, recipient, l2Address);
                 console.log(receipt);
-                $('#erc20Message').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
+                let t = Date.now()
+                messages += `<br/> L2 initiate txHash: ${receipt.transactionHash} (${(t - start)/1000}s)`
+                $('#erc20Message').html(messages)
 
-                // wait until message is relayed
-                await sdk.waitForMessageRelayed(tx.hash);
+                // wait for finalized
+                const l1FinalizedTxHash = await sdk.waitForWithdrawalL1Tx(receipt, '0')
+                t = Date.now()
+                messages += `<br/> L1 finalized txHash: ${l1FinalizedTxHash} (${(t - start)/1000}s)`
+                $('#erc20Message').html(messages)
 
                 // show balance, with success message
-                const balances = await sdk.getERC20Balance(userAccount, l1Address, l2Address);
-                $('#erc20Message').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+                balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
+                messages += `<br/>Succeed withdraw, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`
+                $('#erc20Message').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {
                 $('#erc20Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
             }
@@ -224,42 +218,43 @@
             $('#withdrawERC20').prop('disabled', false);
         });
 
+        // TODO NFT-ERC721
         // Withdraw ERC721
-        $('#withdrawERC721').click(async () => {
-            // disable button
-            $('#withdrawERC721').prop('disabled', true);
+        // $('#withdrawERC721').click(async () => {
+        //     // disable button
+        //     $('#withdrawERC721').prop('disabled', true);
 
-            // show withdrawing...
-            $('#erc721Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
+        //     // show withdrawing...
+        //     $('#erc721Message').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').text('Approving transfer...');
 
-            let l1Address = $('#erc721L1Address').val();
-            let l2Address = $('#erc721L2Address').val();
-            let tokenId = $('#erc721TokenId').val();
-            let recipient = $('#erc721Recipient').val();
-            try {
-                l1Address = sdk.util.assertAddresse(l1Address);
-                l2Address = sdk.util.assertAddresse(l2Address);
-                recipient = sdk.util.assertAddresse(recipient);
+        //     let l1Address = $('#erc721L1Address').val();
+        //     let l2Address = $('#erc721L2Address').val();
+        //     let tokenId = $('#erc721TokenId').val();
+        //     let recipient = $('#erc721Recipient').val();
+        //     try {
+        //         l1Address = sdk.util.assertAddresse(l1Address);
+        //         l2Address = sdk.util.assertAddresse(l2Address);
+        //         recipient = sdk.util.assertAddresse(recipient);
 
-                // withdraw
-                const tx = await sdk.messenger.withdrawERC20(l1Address, l2Address, tokenId);
-                const receipt = await tx.wait();
-                console.log(receipt);
-                $('#erc721Message').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
+        //         // withdraw
+        //         const tx = await sdk.messenger.withdrawERC20(l1Address, l2Address, tokenId);
+        //         const receipt = await tx.wait();
+        //         console.log(receipt);
+        //         $('#erc721Message').text(`Waiting for message to be finalized..., txHash: ${receipt.transactionHash}`);
 
-                // wait until message is relayed
-                await sdk.waitForMessageRelayed(tx.hash);
+        //         // wait until message is relayed
+        //         await sdk.waitForMessageRelayed(tx.hash);
 
-                // show balance, with success message
-                const balances = await sdk.getERC721Balance(userAccount, l1Address, l2Address);
-                $('#erc721Message').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
-            } catch (error) {
-                $('#erc721Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
-            }
+        //         // show balance, with success message
+        //         const balances = await sdk.getERC721Balance(userAccount, l1Address, l2Address);
+        //         $('#erc721Message').removeClass('alert-info').addClass('alert-success').text(`Succeed withdraw, L1 Balance: ${balances.l1.toString()}, L2 Balance: ${balances.l2.toString()}`);
+        //     } catch (error) {
+        //         $('#erc721Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
+        //     }
 
-            // enable button
-            $('#withdrawERC721').prop('disabled', false);
-        });
+        //     // enable button
+        //     $('#withdrawERC721').prop('disabled', false);
+        // });
 
         // Function to handle going back and logging out
         $('#backButton').click(function() {
