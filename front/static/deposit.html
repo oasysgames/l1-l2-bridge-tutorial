@@ -138,14 +138,16 @@
             // disable button
             $('#depositETH').prop('disabled', true);
 
-            const balances = await sdk.getBalances(userAccount);
+            let amount = $('#ethAmount').val();
+            let recipient = $('#ethRecipient').val();
 
-            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}<br/>Depositing OAS...`
+            const balances = await sdk.getBalances(userAccount);
+            const recipientBalances = await sdk.getBalances(recipient);
+
+            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${recipientBalances.l2}<br/>Depositing OAS...`
             // show depositing...
             $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').html(messages);
 
-            let amount = $('#ethAmount').val();
-            let recipient = $('#ethRecipient').val();
             try {
                 const l1Receipt = await sdk.depositOAS(amount, recipient)
 
@@ -156,9 +158,10 @@
                 // Wait for l2 transaction
                 const l2TxHash = await sdk.waitForDepositL2Tx(l1Receipt, amount);
                 const balances = await sdk.getBalances(userAccount);
+                const recipientBalances = await sdk.getBalances(recipient);
 
                 messages += `<br/>Done relaying, l2 hash: ${l2TxHash}`;
-                messages += `<br/>Succeed deposit, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`;
+                messages += `<br/>Succeed deposit, L1 Balance: ${balances.l1}, L2 Balance: ${recipientBalances.l2}`;
 
                 $('#ethMessage').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {
@@ -181,7 +184,8 @@
 
             // fetch balances
             let balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
-            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`;
+            let recipientBalances = await sdk.getErc20Balances(recipient, l1Address, l2Address);
+            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${recipientBalances.l2}`;
 
             // show depositing...
             messages += `<br/>Approving transfer...`
@@ -194,7 +198,7 @@
                 $('#erc20Message').html(messages);
 
                 // deposit
-                const l1Receipt = await sdk.depositERC20(l1Address, l2Address, amount);
+                const l1Receipt = await sdk.depositERC20(l1Address, l2Address, amount, recipient);
                 // Done l1 transaction
                 messages += `<br/>l1 hash: ${l1Receipt.transactionHash}<br/>Waiting for message to be relayed...`
                 $('#erc20Message').html(messages);
@@ -202,9 +206,10 @@
                 // Wait for l2 transaction
                 const l2TxHash = await sdk.waitForDepositL2Tx(l1Receipt, '0');
                 balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
+                recipientBalances = await sdk.getErc20Balances(recipient, l1Address, l2Address);
 
                 messages += `<br/>Done relaying, l2 hash: ${l2TxHash}`;
-                messages += `<br/>Succeed deposit, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`;
+                messages += `<br/>Succeed deposit, L1 Balance: ${balances.l1}, L2 Balance: ${recipientBalances.l2}`;
 
                 $('#erc20Message').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {

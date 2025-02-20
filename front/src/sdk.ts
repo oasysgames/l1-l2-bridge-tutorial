@@ -109,7 +109,7 @@ export class BridgeSDK {
 
   async connectMetamask(): Promise<string> {
     await this.walletClient.switchChain({ id: this.isL2 ? L2Chain.id : L1Chain.id })
-    const [address] = await this.walletClient.getAddresses()
+    const [address] = await this.walletClient.requestAddresses()
     console.log('connectMetamask', address)
 
     return address
@@ -182,14 +182,15 @@ export class BridgeSDK {
   async depositOAS(amount: string, address: Address): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
+    const [account] = await this.walletClient.getAddresses()
 
     const { request } = await publicClientL1.simulateContract({
       address: l1StandardBridgeAddr,
       value: parsedAmount,
       abi: l1StandardBridgeAbi,
-      functionName: 'depositETH',
-      args: [parseUnits('2', 6), '0x'],
-      account: address,
+      functionName: 'depositETHTo',
+      args: [address, parseUnits('2', 6), '0x'],
+      account,
     })
 
     const hash = await this.walletClient.writeContract(request)
@@ -232,19 +233,19 @@ export class BridgeSDK {
    * @param l2ContractAddr 
    * @param amount 
    */
-  async depositERC20(l1ContractAddr: Address, l2ContractAddr: Address, amount: string): Promise<TransactionReceipt> {
+  async depositERC20(l1ContractAddr: Address, l2ContractAddr: Address, amount: string, recipientAddr: Address): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     // get address from wallet
-    const [address] = await this.walletClient.getAddresses()
+    const [account] = await this.walletClient.getAddresses()
 
     // simulate contract write
     const { request } = await publicClientL1.simulateContract({
       address: l1StandardBridgeAddr, //'0x',
       abi: l1StandardBridgeAbi,
-      functionName: 'depositERC20',
-      args: [l1ContractAddr, l2ContractAddr, parsedAmount, parseUnits('2', 6), '0x'],
-      account: address,
+      functionName: 'depositERC20To',
+      args: [l1ContractAddr, l2ContractAddr, recipientAddr, parsedAmount, parseUnits('2', 6), '0x'],
+      account,
     })
 
     // execute contract write
