@@ -276,10 +276,12 @@ export class BridgeSDK {
    * @param l2TokenAddr 
    * @returns 
    */
-  async withdraw(amount: string, account: Address, l2TokenAddr?: Address): Promise<TransactionReceipt> {
+  async withdraw(amount: string, recipientAddr: Address, l2TokenAddr?: Address): Promise<TransactionReceipt> {
     const parsedAmount = parseUnits(amount ?? '0', 18)
     const isNative = !l2TokenAddr
     l2TokenAddr = l2TokenAddr || l2OASLegacyAddr
+
+    const [account] = await this.walletClient.getAddresses()
 
     // in case native token and verse v1, need to pass value, otherwise 0
     const value = (isNative && L2Chain.version) ? parsedAmount : BigInt(0)
@@ -288,9 +290,9 @@ export class BridgeSDK {
     const { request } = await publicClientL2.simulateContract({
       address: l2StandardBridgeAddr, //'0x',
       abi: l2StandardBridgeAbi,
-      functionName: 'withdraw',
+      functionName: 'withdrawTo',
       value,
-      args: [l2TokenAddr, parsedAmount, 0, '0x'],
+      args: [l2TokenAddr, recipientAddr, parsedAmount, 0, '0x'],
       account,
     })
 
