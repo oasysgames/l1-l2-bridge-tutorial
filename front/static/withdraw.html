@@ -144,7 +144,8 @@
             let recipient = $('#ethRecipient').val();
 
             let balances = await sdk.getBalances(userAccount);
-            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}<br/>Withdrawing OAS...`;
+            let recipientBalances = await sdk.getBalances(recipient);
+            let messages = `L1 Balance: ${recipientBalances.l1}, L2 Balance: ${balances.l2}, ${new Date()}<br/>Withdrawing OAS...`;
             // show withdrawing...
             $('#ethMessage').show().removeClass('alert-danger').removeClass('alert-success').addClass('alert-info').html(messages);
             try {
@@ -163,7 +164,8 @@
 
                 // show balance, with success message
                 balances = await sdk.getBalances(userAccount);
-                messages += `<br/>Succeed withdraw, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`
+                recipientBalances = await sdk.getBalances(recipient);
+                messages += `<br/>Succeed withdraw, L1 Balance: ${recipientBalances.l1}, L2 Balance: ${balances.l2}`
                 $('#ethMessage').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {
                 $('#ethMessage').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
@@ -184,7 +186,8 @@
             let recipient = $('#erc20Recipient').val();
 
             let balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
-            let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`;
+            let recipientBalances = await sdk.getErc20Balances(recipient, l1Address, l2Address);
+            let messages = `L1 Balance: ${recipientBalances.l1}, L2 Balance: ${balances.l2}, ${new Date()}`;
             messages += `<br/>Withdrawing...`
 
             // show withdrawing...
@@ -208,7 +211,8 @@
 
                 // show balance, with success message
                 balances = await sdk.getErc20Balances(userAccount, l1Address, l2Address);
-                messages += `<br/>Succeed withdraw, L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}`
+                recipientBalances = await sdk.getErc20Balances(recipient, l1Address, l2Address);
+                messages += `<br/>Succeed withdraw, L1 Balance: ${recipientBalances.l1}, L2 Balance: ${balances.l2}`
                 $('#erc20Message').removeClass('alert-info').addClass('alert-success').html(messages);
             } catch (error) {
                 $('#erc20Message').removeClass('alert-info').addClass('alert-danger').text(`Error: ${error.message}`);
