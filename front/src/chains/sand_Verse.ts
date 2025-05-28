@@ -1,13 +1,12 @@
 import { defineChain } from 'viem'
 import { chainConfig } from 'viem/op-stack'
-
 import { ChainId } from '../types'
 
-export const SandVerse = defineChain({
+export const SandVerse = /*#__PURE__*/ defineChain({
   ...chainConfig,
-  id: ChainId.SANDVERSE,
+  id: ChainId.SAND_VERSE,
   version: 1,
-  name: 'Sand Verse',
+  name: 'SAND Verse',
   nativeCurrency: { name: 'Oasys', symbol: 'OAS', decimals: 18 },
   rpcUrls: {
     default: {
@@ -16,8 +15,8 @@ export const SandVerse = defineChain({
   },
   blockExplorers: {
     default: {
-      name: 'Sand Verse scan',
-      url: '',
+      name: 'Sand Verse Explorer',
+      url: 'https://explorer.sandverse.oasys.games',
     },
   },
   contracts: {
@@ -33,19 +32,15 @@ export const SandVerse = defineChain({
       },
     },
     portal: {
-			[ChainId.OASYS_TESTNET]: {
-				address: '0xd1F4638035B367D7874b6fdc118bFD44bF62FA42',
-			},
-		},
-		disputeGameFactory: {
-			[ChainId.OASYS_TESTNET]: {
-				address: '0x',
-			},
-		},
-		l2OutputOracle: {
-			[ChainId.OASYS_TESTNET]: {
-				address: '0x018286121c03e7B8dB00fe5cd3CA3f9979c8F51d',
-			},
-		},
+      [ChainId.OASYS_TESTNET]: {
+        address: '0xd1F4638035B367D7874b6fdc118bFD44bF62FA42',
+      },
+    },
+    l2OutputOracle: {
+      [ChainId.OASYS_TESTNET]: {
+        address: '0x018286121c03e7B8dB00fe5cd3CA3f9979c8F51d',
+      },
+    },
   },
+  testnet: true,
 })

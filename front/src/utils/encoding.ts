@@ -1,6 +1,6 @@
-// Reference https://github.com/oasysgames/oasys-opstack/blob/develop/packages/core-utils/src/optimism/encoding.ts
+// Reference https://github.com/oasysgames/oasys-opstack/tree/v1.1.0/packages/core-utils/src/optimism/encoding.ts
 
-import { encodeFunctionData, parseAbi } from 'viem'
+import { encodeFunctionData, parseAbi, Address } from 'viem'
 
 const nonceMask = 0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
 
@@ -48,8 +48,8 @@ export const decodeVersionedNonce = (
  * @param nonce     The cross domain message nonce
  */
 export const encodeCrossDomainMessageV0 = (
-  target: `0x${string}`,
-  sender: `0x${string}`,
+  target: Address,
+  sender: Address,
   data: `0x${string}`,
   nonce: bigint
 ) => {
@@ -73,8 +73,8 @@ export const encodeCrossDomainMessageV0 = (
  */
 export const encodeCrossDomainMessageV1 = (
   nonce: bigint,
-  sender: `0x${string}`,
-  target: `0x${string}`,
+  sender: Address,
+  target: Address,
   value: bigint,
   gasLimit: bigint,
   data: `0x${string}`
@@ -100,14 +100,13 @@ export const encodeCrossDomainMessageV1 = (
  */
 export const encodeCrossDomainMessage = (
   nonce: bigint,
-  sender: `0x${string}`,
-  target: `0x${string}`,
+  sender: Address,
+  target: Address,
   value: bigint,
   gasLimit: bigint,
   data: `0x${string}`,
 ) => {
   const { version } = decodeVersionedNonce(nonce)
-  console.log('Version', version)
   if (version === 0n) {
     return encodeCrossDomainMessageV0(target, sender, data, nonce)
   } else if (version === 1n) {
