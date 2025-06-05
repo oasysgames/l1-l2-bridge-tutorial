@@ -21,9 +21,17 @@ export const HomeVerseTestnet = /*#__PURE__*/ defineChain({
   },
   contracts: {
     ...chainConfig.contracts,
+    l2Erc721Bridge: {
+      address: '0x6200000000000000000000000000000000000001',
+    },
     l1StandardBridge: {
       [ChainId.OASYS_TESTNET]: {
         address: '0xb4Ca1bf8f3eF20445d6105dC9085A83300c8B5C7',
+      },
+    },
+    l1Erc721Bridge: {
+      [ChainId.OASYS_TESTNET]: {
+        address: '0xBf490B5e2d510D9B7d0A236B9e1a5728CA363eD8',
       },
     },
     l1CrossDomainMessenger: {

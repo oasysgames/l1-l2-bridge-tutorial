@@ -21,24 +21,32 @@ export const PrivateV1 = /*#__PURE__*/ defineChain({
   },
   contracts: {
     ...chainConfig.contracts,
+    l2Erc721Bridge: {
+      address: '0x6200000000000000000000000000000000000001',
+    },
     l1StandardBridge: {
       [ChainId.PRIVATE_L1]: {
-        address: '0x2ecb238aeed84eB40F07144210B8260825B882F2',
+        address: '0x2ecb238aeed84eB40F07144210B8260825B882F2', // Sample
+      },
+    },
+    l1Erc721Bridge: {
+      [ChainId.PRIVATE_L1]: {
+        address: '0x87bd16B5c85afa2D93111F6b76C4097378EFE138', // Sample
       },
     },
     l1CrossDomainMessenger: {
       [ChainId.PRIVATE_L1]: {
-        address: '0x09d0b2A42d28e60f98A9D8755E7347b8870eA01c',
+        address: '0x09d0b2A42d28e60f98A9D8755E7347b8870eA01c', // Sample
       },
     },
     portal: {
       [ChainId.PRIVATE_L1]: {
-        address: '0x4F56b7f2DD89e2A45C1CC177Edf0DcD6F64681a7',
+        address: '0x4F56b7f2DD89e2A45C1CC177Edf0DcD6F64681a7', // Sample
       },
     },
     l2OutputOracle: {
       [ChainId.PRIVATE_L1]: {
-        address: '0xAC62C88a7e3B821C265Cae3aa3f066404feFC490',
+        address: '0xAC62C88a7e3B821C265Cae3aa3f066404feFC490', // Sample
       },
     },
   },

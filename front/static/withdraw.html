@@ -53,7 +53,7 @@
         <input id="ethRecipient" type="text" placeholder="Recipient Address" class="form-control">
       </div>
       <div class="col-sm-auto">
-        <button id="withdrawETH" class="btn btn-success">Withdraw</button>
+        <button id="withdrawOas" class="btn btn-success">Withdraw</button>
       </div>
     </div>
     <div id="ethMessage" class="alert" role="alert" style="display:none;"></div>
@@ -77,10 +77,33 @@
         <input id="erc20Recipient" type="text" placeholder="Recipient Address" class="form-control">
       </div>
       <div class="col-sm-auto">
-        <button id="withdrawERC20" class="btn btn-success">Withdraw</button>
+        <button id="withdrawErc20" class="btn btn-success">Withdraw</button>
       </div>
     </div>
     <div id="erc20Message" class="alert" role="alert" style="display:none;"></div>
+  </div>
+
+  <!-- ERC721 Tokens Section -->
+  <div class="section my-3">
+    <h2>ERC721 Tokens</h2>
+    <div class="row g-3">
+      <div class="col-sm">
+        <input id="erc721L1Address" type="text" placeholder="* L1 Contract Address" class="form-control">
+      </div>
+      <div class="col-sm">
+        <input id="erc721L2Address" type="text" placeholder="* L2 Contract Address" class="form-control">
+      </div>
+      <div class="col-sm-2">
+        <input id="erc721TokenId" type="text" placeholder="* Token ID" class="form-control">
+      </div>
+      <div class="col-sm">
+        <input id="erc721Recipient" type="text" placeholder="Recipient Address" class="form-control">
+      </div>
+      <div class="col-sm-auto">
+        <button id="withdrawErc721" class="btn btn-success">Withdraw</button>
+      </div>
+    </div>
+    <div id="erc721Message" class="alert" role="alert" style="display:none;"></div>
   </div>
 
   <!-- footer -->
@@ -113,12 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Withdraw OAS
-  document.getElementById('withdrawETH').addEventListener('click', async () => {
+  document.getElementById('withdrawOas').addEventListener('click', async () => {
     if (!userAccount) {
       alert('Please connect your wallet first.');
       return false;
     }
-    const btn = document.getElementById('withdrawETH');
+    const btn = document.getElementById('withdrawOas');
     btn.disabled = true;
 
     const amount = document.getElementById('ethAmount').value;
@@ -143,10 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const start = Date.now();
       // initiate withdrawal on L2
       const receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
-        ? sdk.withdrawOAS(amount)
-        : sdk.withdrawOASTo(amount, recipient));
+        ? sdk.withdrawOas(amount)
+        : sdk.withdrawOasTo(amount, recipient));
       let t = Date.now();
-      messages += `<br/>L2 initiate txHash: ${receipt.transactionHash} (${((t - start)/1000).toFixed(1)}s)<br/>Waiting for message to be relayed... (This may take up to several tens of minutes.)`;
+      messages += `<br/>L2 initiate txHash: ${receipt.transactionHash} (${((t - start) / 1000).toFixed(1)}s)<br/>Waiting for message to be relayed... (This may take up to several tens of minutes.)`;
       messageEl.innerHTML = messages;
 
       // wait for L1 finalization
@@ -155,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         verseVersion === 1 ? amount : '0'
       );
       t = Date.now();
-      messages += `<br/>L1 finalized txHash: ${l1FinalizedTxHash} (${((t - start)/1000).toFixed(1)}s)`;
+      messages += `<br/>L1 finalized txHash: ${l1FinalizedTxHash} (${((t - start) / 1000).toFixed(1)}s)`;
       messageEl.innerHTML = messages;
 
       // fetch final balances
@@ -172,12 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Withdraw ERC20
-  document.getElementById('withdrawERC20').addEventListener('click', async () => {
+  document.getElementById('withdrawErc20').addEventListener('click', async () => {
     if (!userAccount) {
       alert('Please connect your wallet first.');
       return false;
     }
-    const btn = document.getElementById('withdrawERC20');
+    const btn = document.getElementById('withdrawErc20');
     btn.disabled = true;
 
     const l1Address = document.getElementById('erc20L1Address').value;
@@ -204,20 +227,78 @@ document.addEventListener('DOMContentLoaded', () => {
       const start = Date.now();
       // initiate ERC20 withdrawal on L2
       const receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
-        ? sdk.withdraw(amount, l2Address)
-        : sdk.withdrawTo(amount, recipient, l2Address));
+        ? sdk.withdrawErc20(amount, l2Address)
+        : sdk.withdrawErc20To(amount, recipient, l2Address));
       let t = Date.now();
-      messages += `<br/>L2 initiate txHash: ${receipt.transactionHash} (${((t - start)/1000).toFixed(1)}s)<br/>Waiting for message to be relayed... (This may take up to several tens of minutes.)`;
+      messages += `<br/>L2 initiate txHash: ${receipt.transactionHash} (${((t - start) / 1000).toFixed(1)}s)<br/>Waiting for message to be relayed... (This may take up to several tens of minutes.)`;
       messageEl.innerHTML = messages;
 
       // wait for L1 finalization
       const l1FinalizedTxHash = await sdk.waitForWithdrawalL1Tx(receipt, '0');
       t = Date.now();
-      messages += `<br/>L1 finalized txHash: ${l1FinalizedTxHash} (${((t - start)/1000).toFixed(1)}s)`;
+      messages += `<br/>L1 finalized txHash: ${l1FinalizedTxHash} (${((t - start) / 1000).toFixed(1)}s)`;
       messageEl.innerHTML = messages;
 
       // fetch final balances
       const finalBalances = await sdk.getErc20Balances(recipient, userAccount, l1Address, l2Address);
+      messages += `<br/>Succeed withdraw, L1 Balance: ${finalBalances.l1}, L2 Balance: ${finalBalances.l2}`;
+      messageEl.classList.replace('alert-info', 'alert-success');
+      messageEl.innerHTML = messages;
+    } catch (error) {
+      messageEl.classList.replace('alert-info', 'alert-danger');
+      messageEl.textContent = `Error: ${error.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Withdraw ERC721
+  document.getElementById('withdrawErc721').addEventListener('click', async () => {
+    if (!userAccount) {
+      alert('Please connect your wallet first.');
+      return false;
+    }
+    const btn = document.getElementById('withdrawErc721');
+    btn.disabled = true;
+
+    const l1Address = document.getElementById('erc721L1Address').value;
+    const l2Address = document.getElementById('erc721L2Address').value;
+    const tokenId = document.getElementById('erc721TokenId').value;
+    const recipientInput = document.getElementById('erc721Recipient').value;
+    const recipient = recipientInput || userAccount;
+
+    if (!l1Address || !l2Address || !tokenId) {
+      alert('Please enter the required fields.');
+      btn.disabled = false;
+      return false;
+    }
+
+    const messageEl = document.getElementById('erc721Message');
+    const initBalances = await sdk.getErc721Balances(recipient, userAccount, l1Address, l2Address);
+    let messages = `L1 Balance: ${initBalances.l1}, L2 Balance: ${initBalances.l2}<br/>Withdrawing...`;
+    messageEl.style.display = 'block';
+    messageEl.classList.remove('alert-danger', 'alert-success');
+    messageEl.classList.add('alert-info');
+    messageEl.innerHTML = messages;
+
+    try {
+      const start = Date.now();
+      // initiate ERC721 withdrawal on L2
+      const receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
+        ? sdk.withdrawErc721(tokenId, l2Address, l1Address)
+        : sdk.withdrawErc721To(tokenId, recipient, l2Address, l1Address));
+      let t = Date.now();
+      messages += `<br/>L2 initiate txHash: ${receipt.transactionHash} (${((t - start) / 1000).toFixed(1)}s)<br/>Waiting for message to be relayed... (This may take up to several tens of minutes.)`;
+      messageEl.innerHTML = messages;
+
+      // wait for L1 finalization
+      const l1FinalizedTxHash = await sdk.waitForWithdrawalL1Tx(receipt, '0');
+      t = Date.now();
+      messages += `<br/>L1 finalized txHash: ${l1FinalizedTxHash} (${((t - start) / 1000).toFixed(1)}s)`;
+      messageEl.innerHTML = messages;
+
+      // fetch final balances
+      const finalBalances = await sdk.getErc721Balances(recipient, userAccount, l1Address, l2Address);
       messages += `<br/>Succeed withdraw, L1 Balance: ${finalBalances.l1}, L2 Balance: ${finalBalances.l2}`;
       messageEl.classList.replace('alert-info', 'alert-success');
       messageEl.innerHTML = messages;

@@ -53,7 +53,7 @@
         <input id="ethRecipient" type="text" placeholder="Recipient Address" class="form-control">
       </div>
       <div class="col-sm-auto">
-        <button id="depositETH" class="btn btn-success">Deposit</button>
+        <button id="depositOas" class="btn btn-success">Deposit</button>
       </div>
     </div>
     <div id="ethMessage" class="alert" role="alert" style="display:none;"></div>
@@ -77,10 +77,33 @@
         <input id="erc20Recipient" type="text" placeholder="Recipient Address" class="form-control">
       </div>
       <div class="col-sm-auto">
-        <button id="depositERC20" class="btn btn-success">Deposit</button>
+        <button id="depositErc20" class="btn btn-success">Deposit</button>
       </div>
     </div>
     <div id="erc20Message" class="alert" role="alert" style="display:none;"></div>
+  </div>
+
+  <!-- ERC721 Tokens Section -->
+  <div class="section my-3">
+    <h2>ERC721 Tokens</h2>
+    <div class="row g-3">
+      <div class="col-sm">
+        <input id="erc721L1Address" type="text" placeholder="* L1 Contract Address" class="form-control">
+      </div>
+      <div class="col-sm">
+        <input id="erc721L2Address" type="text" placeholder="* L2 Contract Address" class="form-control">
+      </div>
+      <div class="col-sm-2">
+        <input id="erc721TokenId" type="text" placeholder="* Token ID" class="form-control">
+      </div>
+      <div class="col-sm">
+        <input id="erc721Recipient" type="text" placeholder="Recipient Address" class="form-control">
+      </div>
+      <div class="col-sm-auto">
+        <button id="depositErc721" class="btn btn-success">Deposit</button>
+      </div>
+    </div>
+    <div id="erc721Message" class="alert" role="alert" style="display:none;"></div>
   </div>
 
   <!-- footer -->
@@ -111,12 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Deposit OAS
-  document.getElementById('depositETH').addEventListener('click', async () => {
+  document.getElementById('depositOas').addEventListener('click', async () => {
     if (!userAccount) {
       alert('Please connect your wallet first.');
       return false;
     }
-    const btn = document.getElementById('depositETH');
+    const btn = document.getElementById('depositOas');
     btn.disabled = true;
 
     const amount = document.getElementById('ethAmount').value;
@@ -140,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Perform deposit
       const l1Receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
-        ? sdk.depositOAS(amount)
-        : sdk.depositOASTo(amount, recipient));
+        ? sdk.depositOas(amount)
+        : sdk.depositOasTo(amount, recipient));
 
       messages += `<br/>L1 txHash: ${l1Receipt.transactionHash}<br/>Waiting for message to be relayed...`;
       messageEl.innerHTML = messages;
@@ -163,12 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Deposit ERC20
-  document.getElementById('depositERC20').addEventListener('click', async () => {
+  document.getElementById('depositErc20').addEventListener('click', async () => {
     if (!userAccount) {
       alert('Please connect your wallet first.');
       return false;
     }
-    const btn = document.getElementById('depositERC20');
+    const btn = document.getElementById('depositErc20');
     btn.disabled = true;
 
     const l1Address = document.getElementById('erc20L1Address').value;
@@ -193,14 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
       messageEl.innerHTML = messages;
 
       // Approve
-      const approveReceipt = await sdk.approveERC20(l1Address, amount);
+      const approveReceipt = await sdk.approveErc20(l1Address, amount);
       messages += `<br/>Approval txHash: ${approveReceipt.transactionHash}<br/>Depositing...`;
       messageEl.innerHTML = messages;
 
       // Deposit
       const l1Receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
-        ? sdk.depositERC20(l1Address, l2Address, amount)
-        : sdk.depositERC20To(l1Address, l2Address, amount, recipient));
+        ? sdk.depositErc20(l1Address, l2Address, amount)
+        : sdk.depositErc20To(l1Address, l2Address, amount, recipient));
 
       messages += `<br/>L1 txHash: ${l1Receipt.transactionHash}<br/>Waiting for message to be relayed...`;
       messageEl.innerHTML = messages;
@@ -208,6 +231,65 @@ document.addEventListener('DOMContentLoaded', () => {
       // Wait for L2
       const l2TxHash = await sdk.waitForDepositL2Tx(l1Receipt, '0');
       const newBalances = await sdk.getErc20Balances(userAccount, recipient, l1Address, l2Address);
+
+      messages += `<br/>Done relaying, L2 txHash: ${l2TxHash}`;
+      messages += `<br/>Succeed deposit, L1 Balance: ${newBalances.l1}, L2 Balance: ${newBalances.l2}`;
+      messageEl.classList.replace('alert-info', 'alert-success');
+      messageEl.innerHTML = messages;
+    } catch (error) {
+      messageEl.classList.replace('alert-info', 'alert-danger');
+      messageEl.textContent = `Error: ${error.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Deposit ERC721
+  document.getElementById('depositErc721').addEventListener('click', async () => {
+    if (!userAccount) {
+      alert('Please connect your wallet first.');
+      return false;
+    }
+    const btn = document.getElementById('depositErc721');
+    btn.disabled = true;
+
+    const l1Address = document.getElementById('erc721L1Address').value;
+    const l2Address = document.getElementById('erc721L2Address').value;
+    const tokenId = document.getElementById('erc721TokenId').value;
+    const recipientInput = document.getElementById('erc721Recipient').value;
+    const recipient = recipientInput || userAccount;
+
+    if (!l1Address || !l2Address || !tokenId) {
+      alert('Please enter the required fields.');
+      btn.disabled = false;
+      return false;
+    }
+
+    const messageEl = document.getElementById('erc721Message');
+    try {
+      const balances = await sdk.getErc721Balances(userAccount, recipient, l1Address, l2Address);
+      let messages = `L1 Balance: ${balances.l1}, L2 Balance: ${balances.l2}<br/>Approving transfer...`;
+      messageEl.style.display = 'block';
+      messageEl.classList.remove('alert-danger', 'alert-success');
+      messageEl.classList.add('alert-info');
+      messageEl.innerHTML = messages;
+
+      // Approve
+      const approveReceipt = await sdk.approveErc721(l1Address, tokenId);
+      messages += `<br/>Approval txHash: ${approveReceipt.transactionHash}<br/>Depositing...`;
+      messageEl.innerHTML = messages;
+
+      // Deposit
+      const l1Receipt = await (userAccount.toLowerCase() === recipient.toLowerCase()
+        ? sdk.depositErc721(l1Address, l2Address, tokenId)
+        : sdk.depositErc721To(l1Address, l2Address, tokenId, recipient));
+
+      messages += `<br/>L1 txHash: ${l1Receipt.transactionHash}<br/>Waiting for message to be relayed...`;
+      messageEl.innerHTML = messages;
+
+      // Wait for L2
+      const l2TxHash = await sdk.waitForDepositL2Tx(l1Receipt, '0');
+      const newBalances = await sdk.getErc721Balances(userAccount, recipient, l1Address, l2Address);
 
       messages += `<br/>Done relaying, L2 txHash: ${l2TxHash}`;
       messages += `<br/>Succeed deposit, L1 Balance: ${newBalances.l1}, L2 Balance: ${newBalances.l2}`;

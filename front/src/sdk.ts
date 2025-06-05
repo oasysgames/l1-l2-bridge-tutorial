@@ -1,8 +1,8 @@
-import { Address, createPublicClient, createWalletClient, custom, erc20Abi, formatEther, http, parseUnits, PublicClient, TransactionReceipt, WalletClient } from 'viem'
-import { chainConfig, publicActionsL1, publicActionsL2 } from 'viem/op-stack'
+import { Address, createPublicClient, createWalletClient, custom, erc20Abi, erc721Abi, formatEther, http, parseUnits, PublicClient, TransactionReceipt, WalletClient } from 'viem'
+import { publicActionsL1, publicActionsL2 } from 'viem/op-stack'
 
 import * as Chains from './chains'
-import { l1StandardBridgeAbi, l2StandardBridgeAbi } from './abis'
+import { l1StandardBridgeAbi, l1Erc721BridgeAbi, l2StandardBridgeAbi, l2Erc721BridgeAbi } from './abis'
 import { waitForRelayedMessage } from './utils'
 
 /**
@@ -32,10 +32,10 @@ const l2OASLegacyAddr = '0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000'
 
 /**
  * 
- * @param client 
- * @param tokenAddr 
- * @param addr 
- * @returns 
+ * @param client
+ * @param tokenAddr
+ * @param addr
+ * @returns
  */
 async function getErc20Balance(client: PublicClient, tokenAddr: Address, addr: Address): Promise<string> {
   const data = await client.readContract({
@@ -46,6 +46,26 @@ async function getErc20Balance(client: PublicClient, tokenAddr: Address, addr: A
   })
 
   const amount = formatEther(data)
+
+  return amount
+}
+
+/**
+ * 
+ * @param client
+ * @param tokenAddr
+ * @param addr
+ * @returns
+ */
+async function getErc721Balance(client: PublicClient, tokenAddr: Address, addr: Address): Promise<string> {
+  const data = await client.readContract({
+    abi: erc721Abi,
+    address: tokenAddr,
+    functionName: 'balanceOf',
+    args: [addr || '0x'],
+  })
+
+  const amount = data.toString()
 
   return amount
 }
@@ -108,12 +128,21 @@ export class BridgeSDK {
     return balances
   }
 
+  async getErc721Balances(l1Account: Address, l2Account: Address, l1ContractAddr: Address, l2ContractAddr: Address): Promise<{l1: string, l2: string}> {
+    const balances = {l1: '', l2: ''}
+
+    balances.l1 = await getErc721Balance(publicClientL1 as PublicClient, l1ContractAddr, l1Account)
+    balances.l2 = await getErc721Balance(publicClientL2 as PublicClient, l2ContractAddr, l2Account)
+
+    return balances
+  }
+
   /**
    * Deposit native
    * 
    * @param amount
    */
-  async depositOAS(amount: string): Promise<TransactionReceipt> {
+  async depositOas(amount: string): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     // get address from wallet
@@ -139,10 +168,10 @@ export class BridgeSDK {
   /**
    * Deposit native To
    * 
-   * @param amount 
-   * @param recipient 
+   * @param amount
+   * @param recipient
    */
-  async depositOASTo(amount: string, recipient: Address): Promise<TransactionReceipt> {
+  async depositOasTo(amount: string, recipient: Address): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     // get address from wallet
@@ -169,9 +198,9 @@ export class BridgeSDK {
    * Approve ERC20
    * 
    * @param l1ContractAddr
-   * @param amount 
+   * @param amount
    */
-  async approveERC20(l1ContractAddr: Address, amount: string): Promise<TransactionReceipt> {
+  async approveErc20(l1ContractAddr: Address, amount: string): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     const [account] = await this.walletClient.getAddresses()
@@ -193,11 +222,11 @@ export class BridgeSDK {
   /**
    * Deposit ERC20
    * 
-   * @param l1ContractAddr 
-   * @param l2ContractAddr 
-   * @param amount 
+   * @param l1ContractAddr
+   * @param l2ContractAddr
+   * @param amount
    */
-  async depositERC20(l1ContractAddr: Address, l2ContractAddr: Address, amount: string): Promise<TransactionReceipt> {
+  async depositErc20(l1ContractAddr: Address, l2ContractAddr: Address, amount: string): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     // get address from wallet
@@ -224,12 +253,12 @@ export class BridgeSDK {
   /**
    * Deposit ERC20 To
    * 
-   * @param l1ContractAddr 
-   * @param l2ContractAddr 
-   * @param amount 
+   * @param l1ContractAddr
+   * @param l2ContractAddr
+   * @param amount
    * @param recipient
    */
-  async depositERC20To(l1ContractAddr: Address, l2ContractAddr: Address, amount: string, recipient: Address): Promise<TransactionReceipt> {
+  async depositErc20To(l1ContractAddr: Address, l2ContractAddr: Address, amount: string, recipient: Address): Promise<TransactionReceipt> {
     const l1StandardBridgeAddr = L2Chain.contracts.l1StandardBridge[L1Chain.id].address
     const parsedAmount = parseUnits(amount ?? '0', 18)
     // get address from wallet
@@ -237,7 +266,7 @@ export class BridgeSDK {
 
     // simulate contract write
     const { request } = await publicClientL1.simulateContract({
-      address: l1StandardBridgeAddr, //'0x',
+      address: l1StandardBridgeAddr,
       abi: l1StandardBridgeAbi,
       functionName: 'depositERC20To',
       args: [l1ContractAddr, l2ContractAddr, recipient, parsedAmount, parseUnits('2', 6), '0x'],
@@ -254,37 +283,122 @@ export class BridgeSDK {
   }
 
   /**
-   * Withdraw native
+   * Approve ERC721
    * 
-   * @param amount 
-   * @returns 
+   * @param l1ContractAddr
+   * @param tokenId
    */
-  async withdrawOAS(amount: string): Promise<TransactionReceipt> {
-    return this.withdraw(amount)
+  async approveErc721(l1ContractAddr: Address, tokenId: bigint): Promise<TransactionReceipt> {
+    const l1Erc721BridgeAddr = L2Chain.contracts.l1Erc721Bridge[L1Chain.id].address
+    const [account] = await this.walletClient.getAddresses()
+    const { request } = await publicClientL1.simulateContract({
+      address: l1ContractAddr,
+      abi: erc721Abi,
+      functionName: 'approve',
+      args: [l1Erc721BridgeAddr, tokenId],
+      account
+    })
+
+    const hash = await this.walletClient.writeContract(request)
+
+    const receipt = await publicClientL1.waitForTransactionReceipt({ hash })
+
+    return receipt
+  }
+
+  /**
+   * Deposit ERC721
+   * 
+   * @param l1ContractAddr
+   * @param l2ContractAddr
+   * @param tokenId
+   */
+  async depositErc721(l1ContractAddr: Address, l2ContractAddr: Address, tokenId: bigint): Promise<TransactionReceipt> {
+    const l1Erc721BridgeAddr = L2Chain.contracts.l1Erc721Bridge[L1Chain.id].address
+    // get address from wallet
+    const [account] = await this.walletClient.getAddresses()
+
+    // simulate contract write
+    const { request } = await publicClientL1.simulateContract({
+      address: l1Erc721BridgeAddr,
+      abi: l1Erc721BridgeAbi,
+      functionName: 'bridgeERC721',
+      args: [l1ContractAddr, l2ContractAddr, tokenId, parseUnits('2', 6), '0x'],
+      account,
+    })
+
+    // execute contract write
+    const hash = await this.walletClient.writeContract(request)
+
+    // Wait for L1 transaction to be processed.
+    const receipt = await publicClientL1.waitForTransactionReceipt({ hash })
+
+    return receipt
+  }
+
+  /**
+   * Deposit ERC721 To
+   * 
+   * @param l1ContractAddr
+   * @param l2ContractAddr
+   * @param tokenId
+   * @param recipient
+   */
+  async depositErc721To(l1ContractAddr: Address, l2ContractAddr: Address, tokenId: bigint, recipient: Address): Promise<TransactionReceipt> {
+    const l1Erc721BridgeAddr = L2Chain.contracts.l1Erc721Bridge[L1Chain.id].address
+    // get address from wallet
+    const [account] = await this.walletClient.getAddresses()
+
+    // simulate contract write
+    const { request } = await publicClientL1.simulateContract({
+      address: l1Erc721BridgeAddr, //'0x',
+      abi: l1Erc721BridgeAbi,
+      functionName: 'bridgeERC721To',
+      args: [l1ContractAddr, l2ContractAddr, recipient, tokenId, parseUnits('2', 6), '0x'],
+      account,
+    })
+
+    // execute contract write
+    const hash = await this.walletClient.writeContract(request)
+
+    // Wait for L1 transaction to be processed.
+    const receipt = await publicClientL1.waitForTransactionReceipt({ hash })
+
+    return receipt
   }
 
   /**
    * Withdraw native
    * 
-   * @param amount 
-   * @param recipient 
-   * @returns 
+   * @param amount
+   * @returns
    */
-  async withdrawOASTo(amount: string, recipient: Address): Promise<TransactionReceipt> {
-    return this.withdrawTo(amount, recipient)
+  async withdrawOas(amount: string): Promise<TransactionReceipt> {
+    return this.withdrawErc20(amount)
+  }
+
+  /**
+   * Withdraw native To
+   * 
+   * @param amount
+   * @param recipient
+   * @returns
+   */
+  async withdrawOasTo(amount: string, recipient: Address): Promise<TransactionReceipt> {
+    return this.withdrawErc20To(amount, recipient)
   }
 
   /**
    * Withdraw (both native and ERC20)
    * 
    * @param amount
-   * @param l2TokenAddr 
-   * @returns 
+   * @param l2ContractAddr
+   * @returns
    */
-  async withdraw(amount: string, l2TokenAddr?: Address): Promise<TransactionReceipt> {
+  async withdrawErc20(amount: string, l2ContractAddr?: Address): Promise<TransactionReceipt> {
     const parsedAmount = parseUnits(amount ?? '0', 18)
-    const isNative = !l2TokenAddr
-    l2TokenAddr = l2TokenAddr || l2OASLegacyAddr
+    const isNative = !l2ContractAddr
+    l2ContractAddr = l2ContractAddr || l2OASLegacyAddr
     // get address from wallet
     const [account] = await this.walletClient.getAddresses()
 
@@ -292,11 +406,11 @@ export class BridgeSDK {
     const value = (isNative && L2Chain.version) ? parsedAmount : BigInt(0)
 
     const { request } = await publicClientL2.simulateContract({
-      address: chainConfig.contracts.l2StandardBridge.address,
+      address: L2Chain.contracts.l2StandardBridge.address,
       abi: l2StandardBridgeAbi,
       functionName: 'withdraw',
       value,
-      args: [l2TokenAddr, parsedAmount, 0, '0x'],
+      args: [l2ContractAddr, parsedAmount, 0, '0x'],
       account,
     })
 
@@ -309,17 +423,17 @@ export class BridgeSDK {
   }
 
   /**
-   * Withdraw (both native and ERC20)
+   * Withdraw (both native and ERC20) To
    * 
-   * @param amount 
-   * @param recipient 
-   * @param l2TokenAddr 
-   * @returns 
+   * @param amount
+   * @param recipient
+   * @param l2ContractAddr
+   * @returns
    */
-  async withdrawTo(amount: string, recipient: Address, l2TokenAddr?: Address): Promise<TransactionReceipt> {
+  async withdrawErc20To(amount: string, recipient: Address, l2ContractAddr?: Address): Promise<TransactionReceipt> {
     const parsedAmount = parseUnits(amount ?? '0', 18)
-    const isNative = !l2TokenAddr
-    l2TokenAddr = l2TokenAddr || l2OASLegacyAddr
+    const isNative = !l2ContractAddr
+    l2ContractAddr = l2ContractAddr || l2OASLegacyAddr
     // get address from wallet
     const [account] = await this.walletClient.getAddresses()
 
@@ -327,11 +441,68 @@ export class BridgeSDK {
     const value = (isNative && L2Chain.version) ? parsedAmount : BigInt(0)
 
     const { request } = await publicClientL2.simulateContract({
-      address: chainConfig.contracts.l2StandardBridge.address,
+      address: L2Chain.contracts.l2StandardBridge.address,
       abi: l2StandardBridgeAbi,
       functionName: 'withdrawTo',
       value,
-      args: [l2TokenAddr, recipient, parsedAmount, 0, '0x'],
+      args: [l2ContractAddr, recipient, parsedAmount, 0, '0x'],
+      account,
+    })
+
+    // execute contract write
+    const hash = await this.walletClient.writeContract(request)
+
+    const receipt = await publicClientL2.waitForTransactionReceipt({ hash })
+
+    return receipt
+  }
+
+  /**
+   * Withdraw ERC721
+   * 
+   * @param tokenId
+   * @param l2ContractAddr
+   * @param l1ContractAddr
+   * @returns
+   */
+  async withdrawErc721(tokenId: bigint, l2ContractAddr: Address, l1ContractAddr: Address): Promise<TransactionReceipt> {
+    // get address from wallet
+    const [account] = await this.walletClient.getAddresses()
+
+    const { request } = await publicClientL2.simulateContract({
+      address: L2Chain.contracts.l2Erc721Bridge.address,
+      abi: l2Erc721BridgeAbi,
+      functionName: 'bridgeERC721',
+      args: [l2ContractAddr, l1ContractAddr, tokenId, 0, '0x'],
+      account,
+    })
+
+    // execute contract write
+    const hash = await this.walletClient.writeContract(request)
+
+    const receipt = await publicClientL2.waitForTransactionReceipt({ hash })
+
+    return receipt
+  }
+
+  /**
+   * Withdraw ERC721 To
+   * 
+   * @param tokenId
+   * @param recipient
+   * @param l2ContractAddr
+   * @param l1ContractAddr
+   * @returns 
+   */
+  async withdrawErc721To(tokenId: bigint, recipient: Address, l2ContractAddr: Address, l1ContractAddr: Address): Promise<TransactionReceipt> {
+    // get address from wallet
+    const [account] = await this.walletClient.getAddresses()
+
+    const { request } = await publicClientL2.simulateContract({
+      address: L2Chain.contracts.l2Erc721Bridge.address,
+      abi: l2Erc721BridgeAbi,
+      functionName: 'bridgeERC721To',
+      args: [l2ContractAddr, l1ContractAddr, recipient, tokenId, 0, '0x'],
       account,
     })
 
@@ -346,7 +517,7 @@ export class BridgeSDK {
   async waitForDepositL2Tx(txReceipt: TransactionReceipt, amount: string): Promise<`0x${string}`> {
     const value = parseUnits(amount ?? '0', 18)
 
-    return waitForRelayedMessage(publicClientL2 as PublicClient, chainConfig.contracts.l2CrossDomainMessenger.address, txReceipt, value)
+    return waitForRelayedMessage(publicClientL2 as PublicClient, L2Chain.contracts.l2CrossDomainMessenger.address, txReceipt, value)
   }
 
   async waitForWithdrawalL1Tx(txReceipt: TransactionReceipt, amount: string): Promise<`0x${string}`> {

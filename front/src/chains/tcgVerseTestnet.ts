@@ -21,9 +21,17 @@ export const TcgVerseTestnet = /*#__PURE__*/ defineChain({
   },
   contracts: {
     ...chainConfig.contracts,
+    l2Erc721Bridge: {
+      address: '0x6200000000000000000000000000000000000001',
+    },
     l1StandardBridge: {
       [ChainId.OASYS_TESTNET]: {
         address: '0xa40e6C690abf299269d8B2012f81E546ECAf802f',
+      },
+    },
+    l1Erc721Bridge: {
+      [ChainId.OASYS_TESTNET]: {
+        address: '0x1c7506b8F4E7f8aCF7eEFb755eF8100AC24EEccC',
       },
     },
     l1CrossDomainMessenger: {
