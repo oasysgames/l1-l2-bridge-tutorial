@@ -1,5 +1,5 @@
 import { parseEventLogs, parseAbiItem, TransactionReceipt, keccak256, PublicClient, Address } from 'viem'
-import { SentMessageEventAbi } from '../abis'
+import { sentMessageEventAbi } from '../abis'
 import { encodeCrossDomainMessage } from './encoding'
 import type { Abi, AbiEvent } from 'abitype'
 
@@ -21,7 +21,7 @@ interface WatchLogsOptions {
  */
 export function getMessageHash(r: TransactionReceipt, value: bigint): string {
   const logs = parseEventLogs({
-    abi: SentMessageEventAbi,
+    abi: sentMessageEventAbi,
     eventName: 'SentMessage',
     logs: r.logs,
   })

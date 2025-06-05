@@ -1,4 +1,4 @@
-export const SentMessageEventAbi = [
+export const sentMessageEventAbi = [
   {
     anonymous: false,
     inputs: [
