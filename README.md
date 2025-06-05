@@ -1,9 +1,9 @@
 # L1-L2 Bridge Tutorial
-This repository primarily serves as a tutorial to demonstrate how the L1 <> L2 bidirectional bridge functions. Users can interact with a simple UI to execute the L1->L2 bridge (deposit) and L2->L1 bridge (withdraw) operations. In this context, L1 represents the [Testnet](https://docs.oasys.games/docs/staking/rpc-endpoint/1-1-rpc-endpoint#testnet-hub-layer), and L2 represents [Sandverse V1](TODO).
+This repository primarily serves as a tutorial to demonstrate how the L1 <> L2 bidirectional bridge functions. Users can interact with a simple UI to execute the L1->L2 bridge (deposit) and L2->L1 bridge (withdraw) operations. In this context, L1 represents the [Testnet](https://docs.oasys.games/docs/staking/rpc-endpoint/1-1-rpc-endpoint#testnet-hub-layer), and L2 represents [SAND Verse](https://docs.oasys.games/docs/staking/rpc-endpoint/1-1-rpc-endpoint#sand-verse-verse-layer).
 
 As this tutorial was originally designed for engineers, we have omitted detailed verbal explanations. Instead, users are encouraged to read the code, as we have included friendly instructions within.
 
-Although the primary objective is to provide a tutorial, we also offer a useful [Bridge SDK](./front/src/sdk.ts). This SDK can be leveraged to facilitate integration with your own dApps.
+Although the primary objective is to provide a tutorial, we also offer a [Bridge SDK](./front/src/sdk.ts). You can refer to this SDK for integrating with your own dApps.
 
 ## Steps to Execute Bidirectional Bridge
 1. Deploy Contracts
