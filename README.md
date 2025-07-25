@@ -1,6 +1,6 @@
 # L1-L2 Bridge Tutorial
-**We have no plans to add new features to the l1-l2-bridge-tutorial, and it is currently in maintenance mode.**  
-**For bridging between L1 Testnet and SAND Verse, please use the [SAND Verse Explorer](https://explorer.sandverse.oasys.games/).**
+**We have no plans to add new features to the l1-l2-bridge-tutorial, and no further updates are planned.**  
+**For bridging between L1 Testnet and SAND Verse, please use the [SAND Verse Explorer](https://explorer.sandverse.oasys.games/bridge).**
 
 This repository primarily serves as a tutorial to demonstrate how the L1 <> L2 bidirectional bridge functions. Users can interact with a simple UI to execute the L1->L2 bridge (deposit) and L2->L1 bridge (withdraw) operations. In this context, L1 represents the [Testnet](https://docs.oasys.games/docs/staking/rpc-endpoint/1-1-rpc-endpoint#testnet-hub-layer), and L2 represents [SAND Verse](https://docs.oasys.games/docs/staking/rpc-endpoint/1-1-rpc-endpoint#sand-verse-verse-layer).
 
